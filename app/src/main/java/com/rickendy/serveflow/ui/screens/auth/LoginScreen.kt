@@ -105,17 +105,19 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
 
                     Text(
                         text = "ServeFlow",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Text(
-                        text = "Sign in to continue",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Login",
+                        style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     OutlinedTextField(
                         value = username,
