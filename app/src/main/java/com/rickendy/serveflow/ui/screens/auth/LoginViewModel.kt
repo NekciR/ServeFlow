@@ -1,6 +1,9 @@
 package com.rickendy.serveflow.ui.screens.auth
 
+import android.app.Application
 import android.content.Context
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rickendy.serveflow.data.repository.AuthRepository
@@ -13,7 +16,9 @@ data class LoginUiState(
     val error: String? = null
 )
 
-class LoginViewModel(private val context: Context) : ViewModel() {
+class LoginViewModel(application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
+
+    private val context = application.applicationContext
 
     private val repository = AuthRepository(context)
 

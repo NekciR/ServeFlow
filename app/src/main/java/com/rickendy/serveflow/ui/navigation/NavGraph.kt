@@ -7,11 +7,9 @@ sealed class Screen(val route: String) {
     object WaiterTableDetail : Screen("waiter/tables/{tableId}") {
         fun createRoute(tableId: Int) = "waiter/tables/$tableId"
     }
-    object WaiterNewOrder : Screen("waiter/tables/{tableId}/new-order") {
-        fun createRoute(tableId: Int) = "waiter/tables/$tableId/new-order"
-    }
-    object WaiterAddItems : Screen("waiter/orders/{orderId}/add-items") {
-        fun createRoute(orderId: Int) = "waiter/orders/$orderId/add-items"
+    object WaiterOrder : Screen("waiter/tables/{tableId}/order?orderId={orderId}") {
+        fun createRoute(tableId: Int, orderId: Int? = null) =
+            "waiter/tables/$tableId/order?orderId=$orderId"
     }
 
     object CookKitchen : Screen("cook/kitchen")

@@ -38,6 +38,18 @@ object SocketClient {
         socket?.emit("subscribe:table", tableId)
     }
 
+    fun subscribeTables() {
+        socket?.emit("subscribe:tables")
+    }
+
+    fun onTablesUpdate(callback: (JSONObject) -> Unit) {
+        socket?.off("table:update") // 🔥 prevent duplicate listener
+        socket?.on("table:update") { args ->
+            val data = args[0] as? JSONObject ?: return@on
+            callback(data)
+        }
+    }
+
     fun onOrderNew(callback: (JSONObject) -> Unit) {
         socket?.on("order:new") { args ->
             val data = args[0] as? JSONObject ?: return@on

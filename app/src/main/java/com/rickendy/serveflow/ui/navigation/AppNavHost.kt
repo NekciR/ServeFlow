@@ -1,8 +1,14 @@
 package com.rickendy.serveflow.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
@@ -16,8 +22,7 @@ import com.rickendy.serveflow.ui.screens.cashier.CashierPendingScreen
 import com.rickendy.serveflow.ui.screens.cashier.CashierSummaryScreen
 import com.rickendy.serveflow.ui.screens.cook.CookKitchenScreen
 import com.rickendy.serveflow.ui.screens.cook.CookOrderDetailScreen
-import com.rickendy.serveflow.ui.screens.waiter.WaiterAddItemsScreen
-import com.rickendy.serveflow.ui.screens.waiter.WaiterNewOrderScreen
+import com.rickendy.serveflow.ui.screens.waiter.WaiterOrderScreen
 import com.rickendy.serveflow.ui.screens.waiter.WaiterTableDetailScreen
 import com.rickendy.serveflow.ui.screens.waiter.WaiterTablesScreen
 import com.rickendy.serveflow.util.sessionFlow
@@ -27,11 +32,20 @@ fun AppNavHost(navController: NavHostController) {
     val context = LocalContext.current
     val session by context.sessionFlow().collectAsState(initial = null)
 
-    val startDestination = when (session?.role) {
-        "waiter" -> Screen.WaiterTables.route
-        "cook" -> Screen.CookKitchen.route
-        "cashier" -> Screen.CashierPending.route
-        else -> Screen.Login.route
+    val startDestination = remember(session?.accessToken) {
+        when (session?.role) {
+            "waiter" -> Screen.WaiterTables.route
+            "cook" -> Screen.CookKitchen.route
+            "cashier" -> Screen.CashierPending.route
+            else -> Screen.Login.route
+        }
+    }
+
+    if (session == null) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+        return
     }
 
     NavHost(
@@ -74,36 +88,33 @@ fun AppNavHost(navController: NavHostController) {
             val tableId = backStack.arguments?.getInt("tableId") ?: return@composable
             WaiterTableDetailScreen(
                 tableId = tableId,
-                onNewOrder = { navController.navigate(Screen.WaiterNewOrder.createRoute(tableId)) },
-                onAddItems = { orderId -> navController.navigate(Screen.WaiterAddItems.createRoute(orderId)) },
+                onNewOrder = { navController.navigate(Screen.WaiterOrder.createRoute(tableId)) },
+                onAddItems = { orderId -> navController.navigate(Screen.WaiterOrder.createRoute(tableId, orderId)) },
                 onBack = { navController.popBackStack() }
             )
         }
 
         composable(
-            route = Screen.WaiterNewOrder.route,
-            arguments = listOf(navArgument("tableId") { type = NavType.IntType })
+            route = Screen.WaiterOrder.route,
+            arguments = listOf(
+                navArgument("tableId") { type = NavType.IntType },
+                navArgument("orderId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { backStack ->
             val tableId = backStack.arguments?.getInt("tableId") ?: return@composable
-            WaiterNewOrderScreen(
+            val orderId = backStack.arguments?.getString("orderId")?.toIntOrNull()
+            WaiterOrderScreen(
                 tableId = tableId,
-                onOrderCreated = {
+                orderId = orderId,
+                onSuccess = {
                     navController.navigate(Screen.WaiterTables.route) {
                         popUpTo(Screen.WaiterTables.route) { inclusive = false }
                     }
                 },
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Screen.WaiterAddItems.route,
-            arguments = listOf(navArgument("orderId") { type = NavType.IntType })
-        ) { backStack ->
-            val orderId = backStack.arguments?.getInt("orderId") ?: return@composable
-            WaiterAddItemsScreen(
-                orderId = orderId,
-                onItemsAdded = { navController.popBackStack() },
                 onBack = { navController.popBackStack() }
             )
         }
