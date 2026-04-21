@@ -26,8 +26,8 @@ data class PaymentItem(
 data class PaymentSummary(
     val date: String,
     @SerializedName("total_transactions") val totalTransactions: Int,
-    @SerializedName("total_revenue") val totalRevenue: String,
-    @SerializedName("cash_revenue") val cashRevenue: String,
-    @SerializedName("card_revenue") val cardRevenue: String,
-    @SerializedName("qris_revenue") val qrisRevenue: String
+    @SerializedName("total_revenue") val totalRevenue: String?,
+    @SerializedName("cash_revenue") val cashRevenue: String?,
+    @SerializedName("card_revenue") val cardRevenue: String?,
+    @SerializedName("qris_revenue") val qrisRevenue: String?
 )

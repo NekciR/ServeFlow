@@ -148,6 +148,9 @@ fun AppNavHost(navController: NavHostController) {
                 onOrderClick = { orderId ->
                     navController.navigate(Screen.CashierPayment.createRoute(orderId))
                 },
+                onTakeaway = {
+                    navController.navigate(Screen.CashierTakeaway.route)
+                },
                 onSummary = { navController.navigate(Screen.CashierSummary.route) },
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
