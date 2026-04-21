@@ -78,11 +78,12 @@ import com.rickendy.serveflow.util.formatRupiah
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WaiterOrderScreen(
-    tableId: Int,
+    tableId: Int?,
     orderId: Int?,
-    onSuccess: () -> Unit,
+    isTakeaway: Boolean = false,
+    onSuccess: (orderId: Int) -> Unit,
     onBack: () -> Unit
-) {
+){
     val viewModel: WaiterOrderViewModel = viewModel()
 
     LaunchedEffect(Unit) {
@@ -166,7 +167,7 @@ fun WaiterOrderScreen(
                             totalPrice = viewModel.totalPrice,
                             isSubmitting = uiState.isSubmitting,
                             onSubmit = {
-                                viewModel.submitOrder(tableId, orderId, onSuccess)
+                                viewModel.submitOrder(tableId, orderId, onSuccess = onSuccess)
                             }
                         )
                     }

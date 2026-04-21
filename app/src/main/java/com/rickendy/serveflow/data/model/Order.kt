@@ -4,8 +4,9 @@ import com.google.gson.annotations.SerializedName
 
 data class Order(
     val id: Int,
-    @SerializedName("table_id") val tableId: Int,
+    @SerializedName("table_id") val tableId: Int?,
     @SerializedName("waiter_id") val waiterId: Int,
+    @SerializedName("customer_name") val customerName: String?,
     val status: String,
     @SerializedName("table_label") val tableLabel: String?,
     @SerializedName("waiter_name") val waiterName: String?,

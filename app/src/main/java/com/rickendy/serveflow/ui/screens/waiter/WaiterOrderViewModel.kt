@@ -86,7 +86,12 @@ class WaiterOrderViewModel(application: Application, private val savedStateHandl
         _uiState.value = _uiState.value.copy(cart = cart)
     }
 
-    fun submitOrder(tableId: Int, orderId: Int?, onSuccess: () -> Unit) {
+    fun submitOrder(
+        tableId: Int?,
+        orderId: Int?,
+        customerName: String? = null,
+        onSuccess: (Int) -> Unit
+    ) {
         val items = _uiState.value.cart.values.map {
             OrderItemRequest(
                 menuItemId = it.menuItem.id,
@@ -101,15 +106,15 @@ class WaiterOrderViewModel(application: Application, private val savedStateHandl
             _uiState.value = _uiState.value.copy(isSubmitting = true)
 
             val result = if (orderId == null) {
-                orderRepository.createOrder(tableId, items)
+                orderRepository.createOrder(tableId, items, customerName)
             } else {
                 orderRepository.addOrderItems(orderId, items)
             }
 
             result.fold(
-                onSuccess = {
+                onSuccess = { order ->
                     _uiState.value = _uiState.value.copy(isSubmitting = false)
-                    onSuccess()
+                    onSuccess(order.id)
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(

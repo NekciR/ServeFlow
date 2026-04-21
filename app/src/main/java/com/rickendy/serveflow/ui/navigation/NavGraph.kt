@@ -22,4 +22,6 @@ sealed class Screen(val route: String) {
         fun createRoute(orderId: Int) = "cashier/payment/$orderId"
     }
     object CashierSummary : Screen("cashier/summary")
+
+    object CashierTakeaway : Screen("cashier/takeaway")
 }

@@ -14,9 +14,15 @@ class OrderRepository(private val context: Context) {
 
     private val api = NetworkClient.authenticatedApi(context)
 
-    suspend fun createOrder(tableId: Int, items: List<OrderItemRequest>): Result<Order> {
+    suspend fun createOrder(
+        tableId: Int?,
+        items: List<OrderItemRequest>,
+        customerName: String? = null
+    ): Result<Order> {
         return try {
-            val response = api.createOrder(CreateOrderRequest(tableId, items))
+            val response = api.createOrder(
+                CreateOrderRequest(tableId, items, customerName)
+            )
             if (response.isSuccessful) {
                 Result.success(response.body()!!.order)
             } else {

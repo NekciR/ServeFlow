@@ -14,8 +14,9 @@ data class RegisterRequest(
 )
 
 data class CreateOrderRequest(
-    @SerializedName("table_id") val tableId: Int,
-    val items: List<OrderItemRequest>
+    @SerializedName("table_id") val tableId: Int?,
+    val items: List<OrderItemRequest>,
+    @SerializedName("customer_name") val customerName: String? = null
 )
 
 data class OrderItemRequest(

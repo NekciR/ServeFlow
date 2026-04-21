@@ -157,6 +157,22 @@ fun AppNavHost(navController: NavHostController) {
             )
         }
 
+        composable(Screen.CashierTakeaway.route) {
+            WaiterOrderScreen(
+                tableId = null,
+                orderId = null,
+                isTakeaway = true,
+                onSuccess = { orderId ->
+                    orderId?.let {
+                        navController.navigate(Screen.CashierPayment.createRoute(it)) {
+                            popUpTo(Screen.CashierPending.route)
+                        }
+                    }
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable(
             route = Screen.CashierPayment.route,
             arguments = listOf(navArgument("orderId") { type = NavType.IntType })
