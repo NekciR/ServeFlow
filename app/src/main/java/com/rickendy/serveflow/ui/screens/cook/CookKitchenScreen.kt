@@ -2,20 +2,29 @@ package com.rickendy.serveflow.ui.screens.cook
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -45,6 +54,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +79,9 @@ fun CookKitchenScreen(
     val uiState by viewModel.uiState.collectAsState()
     val session by context.sessionFlow().collectAsState(initial = null)
     val pullToRefreshState = rememberPullToRefreshState()
+    val isConnected by viewModel.isConnected.collectAsState()
+
+
 
     LaunchedEffect(Unit) {
         viewModel.loadActiveOrders()
@@ -99,6 +112,14 @@ fun CookKitchenScreen(
                     }
                 },
                 actions = {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(
+                                if (isConnected) Color(0xFF4CAF50) else Color(0xFFF44336),
+                                shape = CircleShape
+                            )
+                    )
                     IconButton(onClick = { viewModel.loadActiveOrders() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
@@ -161,16 +182,43 @@ fun CookKitchenScreen(
                 }
 
                 else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(uiState.orders, key = { it.id }) { order ->
-                            KitchenOrderCard(
-                                order = order,
-                                onClick = { onOrderClick(order.id) }
-                            )
+                    BoxWithConstraints {
+                        val minItemWidth = 200.dp
+                        val spacing = 12.dp
+
+                        val columns = maxOf(
+                            1,
+                            (maxWidth / (minItemWidth + spacing)).toInt()
+                        )
+
+                        val rows = uiState.orders.chunked(columns)
+
+                        LazyColumn(
+                            contentPadding = PaddingValues(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(spacing)
+                        ) {
+                            items(rows) { rowItems ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(IntrinsicSize.Max),
+                                    horizontalArrangement = Arrangement.spacedBy(spacing)
+                                ) {
+                                    rowItems.forEach { order ->
+                                        KitchenOrderCard(
+                                            order = order,
+                                            onClick = { onOrderClick(order.id) },
+                                            modifier = Modifier.fillMaxSize().weight(1f)
+
+                                        )
+                                    }
+
+                                    // Fill remaining slots if last row is incomplete
+                                    repeat(columns - rowItems.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -188,7 +236,8 @@ fun CookKitchenScreen(
 @Composable
 fun KitchenOrderCard(
     order: Order,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier,
 ) {
     val statusColor = when (order.status) {
         "pending" -> StatusPending
@@ -213,7 +262,7 @@ fun KitchenOrderCard(
 
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface

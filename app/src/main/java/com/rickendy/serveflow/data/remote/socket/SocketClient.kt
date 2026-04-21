@@ -3,6 +3,8 @@ package com.rickendy.serveflow.data.remote.socket
 import com.rickendy.serveflow.data.remote.api.NetworkClient
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
 import java.net.URI
 
@@ -10,20 +12,40 @@ object SocketClient {
 
     private var socket: Socket? = null
 
+    private val _connectionState = MutableStateFlow(false)
+    val connectionState: StateFlow<Boolean> = _connectionState
+
     fun connect() {
         if (socket?.connected() == true) return
 
         val options = IO.Options.builder()
             .setTransports(arrayOf("polling", "websocket"))
+            .setReconnection(true)
+            .setReconnectionAttempts(Int.MAX_VALUE)
+            .setReconnectionDelay(2000)
             .build()
 
         socket = IO.socket(URI.create(NetworkClient.BASE_URL.trimEnd('/')), options)
+
+        socket?.on(Socket.EVENT_CONNECT) {
+            _connectionState.value = true
+        }
+
+        socket?.on(Socket.EVENT_DISCONNECT) {
+            _connectionState.value = false
+        }
+
+        socket?.on(Socket.EVENT_CONNECT_ERROR) {
+            _connectionState.value = false
+        }
+
         socket?.connect()
     }
 
     fun disconnect() {
         socket?.disconnect()
         socket = null
+        _connectionState.value = false
     }
 
     fun subscribeKitchen() {
@@ -43,7 +65,7 @@ object SocketClient {
     }
 
     fun onTablesUpdate(callback: (JSONObject) -> Unit) {
-        socket?.off("table:update") // 🔥 prevent duplicate listener
+        socket?.off("table:update")
         socket?.on("table:update") { args ->
             val data = args[0] as? JSONObject ?: return@on
             callback(data)
@@ -58,6 +80,7 @@ object SocketClient {
     }
 
     fun onOrderUpdated(callback: (JSONObject) -> Unit) {
+        socket?.off("order:updated")
         socket?.on("order:updated") { args ->
             val data = args[0] as? JSONObject ?: return@on
             callback(data)

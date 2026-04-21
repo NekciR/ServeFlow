@@ -64,7 +64,7 @@ class TokenAuthenticator(private val context: Context) : Authenticator {
 }
 
 object NetworkClient {
-    const val BASE_URL = "https://serveflow-api-production.up.railway.app/"
+    const val BASE_URL = "https://serveflow-api.rickendy.my.id/"
 
     val unauthenticatedApi: ServeFlowApi by lazy {
         Retrofit.Builder()

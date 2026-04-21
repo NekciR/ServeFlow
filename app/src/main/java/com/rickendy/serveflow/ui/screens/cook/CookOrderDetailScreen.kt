@@ -1,8 +1,10 @@
 package com.rickendy.serveflow.ui.screens.cook
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,13 +13,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -59,6 +66,8 @@ fun CookOrderDetailScreen(
     val viewModel: CookOrderDetailViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
 
+    val isConnected by viewModel.isConnected.collectAsState()
+
     LaunchedEffect(orderId) {
         viewModel.loadOrder(orderId)
         viewModel.startSocket(orderId)
@@ -68,8 +77,28 @@ fun CookOrderDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(uiState.order?.tableLabel ?: "Order Detail")
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(uiState.order?.tableLabel ?: "Order Detail")
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(
+                                    if (isConnected) Color(0xFF4CAF50) else Color(0xFFF44336),
+                                    shape = CircleShape
+                                )
+                        )
+
+//                        Spacer(modifier = Modifier.width(6.dp))
+//
+//                        Text(
+//                            text = if (isConnected) "Live" else "Offline",
+//                            style = MaterialTheme.typography.labelMedium
+//                        )
+                    }
+
                 },
+
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = null)
@@ -132,56 +161,213 @@ fun CookOrderContent(
 ) {
     val allItemsDone = order.items?.all { it.status == "done" } == true
 
-    Column(
-        modifier = Modifier
+    BoxWithConstraints(
+        Modifier
             .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Order #${order.id}",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = order.waiterName ?: "",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = formatDate(order.createdAt),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+            .padding(16.dp)) {
 
-                    OrderStatusChip(status = order.status)
-                }
+        val isLandscape = maxWidth > maxHeight
+        
+        val infoSection: @Composable () -> Unit = {
+            InfoSection(order = order)
+        }
+        
+        val orderItemSection: @Composable () -> Unit = {
+            OrderItemSection(
+                order = order,
+                onUpdateOrderStatus = onUpdateOrderStatus ,
+                onUpdateItemStatus = onUpdateItemStatus,
+                allItemsDone = allItemsDone
+            )
+        }
+        
+
+
+        if (isLandscape) {
+            Row {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .padding(16.dp)) { infoSection() }
+                Box(
+                    Modifier
+                        .weight(1.5f)
+                        .padding(16.dp)) { orderItemSection() }
+            }
+        } else {
+            Column(Modifier.padding(16.dp)) {
+                infoSection()
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Items",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                orderItemSection()
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "Items",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+
+    }
+
+//    Column(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .padding(16.dp)
+//    ) {
+//        Card(
+//            modifier = Modifier.fillMaxWidth(),
+//            shape = RoundedCornerShape(16.dp),
+//            colors = CardDefaults.cardColors(
+//                containerColor = MaterialTheme.colorScheme.surface
+//            ),
+//            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+//        ) {
+//            Column(modifier = Modifier.padding(16.dp)) {
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.SpaceBetween,
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Column {
+//                        Text(
+//                            text = "Order #${order.id}",
+//                            style = MaterialTheme.typography.titleLarge,
+//                            fontWeight = FontWeight.SemiBold
+//                        )
+//                        Text(
+//                            text = order.waiterName ?: "",
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//                        Text(
+//                            text = formatDate(order.createdAt),
+//                            style = MaterialTheme.typography.bodySmall,
+//                            color = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//                    }
+//
+//                    OrderStatusChip(status = order.status)
+//                }
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        Text(
+//            text = "Items",
+//            style = MaterialTheme.typography.titleMedium,
+//            fontWeight = FontWeight.SemiBold,
+//            modifier = Modifier.padding(bottom = 8.dp)
+//        )
+//
+//        LazyColumn(
+//            modifier = Modifier.weight(1f),
+//            verticalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//            items(order.items ?: emptyList(), key = {it.id}) { item ->
+//                CookItemCard(
+//                    item = item,
+//                    onToggle = {
+//                        val newStatus = if (item.status == "done") "cooking" else "done"
+//                        onUpdateItemStatus(item.id, newStatus)
+//                    }
+//                )
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        when (order.status) {
+//            "pending" -> {
+//                Button(
+//                    onClick = { onUpdateOrderStatus("in_progress") },
+//                    modifier = Modifier.fillMaxWidth()
+//                ) {
+//                    Text("Start Cooking")
+//                }
+//            }
+//            "in_progress" -> {
+//                Button(
+//                    onClick = { onUpdateOrderStatus("ready") },
+//                    modifier = Modifier.fillMaxWidth(),
+//                    enabled = allItemsDone
+//                ) {
+//                    Text(if (allItemsDone) "Siap dihidangkan" else "Tandai semua pesanan terlebih dahulu")
+//                }
+//            }
+//            "ready" -> {
+//                Surface(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    shape = RoundedCornerShape(12.dp),
+//                    color = StatusReady.copy(alpha = 0.12f)
+//                ) {
+//                    Text(
+//                        text = "Pesanan siap — menunggu waiter",
+//                        modifier = Modifier.padding(16.dp),
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = StatusReady,
+//                        fontWeight = FontWeight.Medium
+//                    )
+//                }
+//            }
+//        }
+//    }
+}
+
+@Composable
+fun InfoSection(
+    order: Order,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Order #${order.id}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = order.waiterName ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = formatDate(order.createdAt),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                OrderStatusChip(status = order.status)
+            }
+        }
+    }
+}
+
+@Composable
+fun OrderItemSection(
+    order: Order,
+    onUpdateOrderStatus: (String) -> Unit,
+    onUpdateItemStatus: (Int, String) -> Unit,
+    allItemsDone: Boolean,
+){
+    Column {
+
 
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -198,43 +384,44 @@ fun CookOrderContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+//        Spacer(modifier = Modifier.height(16.dp))
 
-        when (order.status) {
-            "pending" -> {
-                Button(
-                    onClick = { onUpdateOrderStatus("in_progress") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Start Cooking")
-                }
-            }
-            "in_progress" -> {
-                Button(
-                    onClick = { onUpdateOrderStatus("ready") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = allItemsDone
-                ) {
-                    Text(if (allItemsDone) "Siap dihidangkan" else "Tandai semua pesanan terlebih dahulu")
-                }
-            }
-            "ready" -> {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = StatusReady.copy(alpha = 0.12f)
-                ) {
-                    Text(
-                        text = "Pesanan siap — menunggu waiter",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = StatusReady,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        }
+//        when (order.status) {
+//            "pending" -> {
+//                Button(
+//                    onClick = { onUpdateOrderStatus("in_progress") },
+//                    modifier = Modifier.fillMaxWidth()
+//                ) {
+//                    Text("Start Cooking")
+//                }
+//            }
+//            "in_progress" -> {
+//                Button(
+//                    onClick = { onUpdateOrderStatus("ready") },
+//                    modifier = Modifier.fillMaxWidth(),
+//                    enabled = allItemsDone
+//                ) {
+//                    Text(if (allItemsDone) "Siap dihidangkan" else "Tandai semua pesanan terlebih dahulu")
+//                }
+//            }
+//            "ready" -> {
+//                Surface(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    shape = RoundedCornerShape(12.dp),
+//                    color = StatusReady.copy(alpha = 0.12f)
+//                ) {
+//                    Text(
+//                        text = "Pesanan siap — menunggu waiter",
+//                        modifier = Modifier.padding(16.dp),
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = StatusReady,
+//                        fontWeight = FontWeight.Medium
+//                    )
+//                }
+//            }
+//        }
     }
+    
 }
 
 @Composable

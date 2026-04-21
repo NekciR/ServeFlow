@@ -28,6 +28,7 @@ class CookKitchenViewModel(application: Application) : AndroidViewModel(applicat
     val uiState: StateFlow<CookKitchenUiState> = _uiState
 
     private var isSocketStarted = false
+    val isConnected = SocketClient.connectionState
 
     init {
         loadActiveOrders()
@@ -71,19 +72,46 @@ class CookKitchenViewModel(application: Application) : AndroidViewModel(applicat
 
         SocketClient.onOrderUpdated { json ->
             val order = parseOrder(json)
+
             viewModelScope.launch {
                 val current = _uiState.value.orders.toMutableList()
                 val index = current.indexOfFirst { it.id == order.id }
-                if (index != -1) {
-                    if (order.status == "paid") {
+
+                when {
+                    index != -1 && order.status == "paid" -> {
                         current.removeAt(index)
-                    } else {
+                    }
+
+                    index != -1 -> {
                         current[index] = order
                     }
+
+                    else -> {
+                        if (order.status != "paid") {
+                            current.add(0, order)
+                        }
+                    }
                 }
+
                 _uiState.value = _uiState.value.copy(orders = current)
             }
         }
+
+//        SocketClient.onOrderUpdated { json ->
+//            val order = parseOrder(json)
+//            viewModelScope.launch {
+//                val current = _uiState.value.orders.toMutableList()
+//                val index = current.indexOfFirst { it.id == order.id }
+//                if (index != -1) {
+//                    if (order.status == "paid") {
+//                        current.removeAt(index)
+//                    } else {
+//                        current[index] = order
+//                    }
+//                }
+//                _uiState.value = _uiState.value.copy(orders = current)
+//            }
+//        }
 
         SocketClient.onOrderItemAdded { json ->
             val order = parseOrder(json)

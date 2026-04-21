@@ -25,6 +25,8 @@ class CookOrderDetailViewModel(application: Application) : AndroidViewModel(appl
     private val _uiState = MutableStateFlow(CookOrderDetailUiState())
     val uiState: StateFlow<CookOrderDetailUiState> = _uiState
 
+    val isConnected = SocketClient.connectionState
+
     fun loadOrder(orderId: Int) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -79,6 +81,7 @@ class CookOrderDetailViewModel(application: Application) : AndroidViewModel(appl
 
     fun startSocket(orderId: Int) {
         SocketClient.connect()
+        SocketClient.subscribeKitchen()
 
         SocketClient.onOrderUpdated { json ->
             val order = parseOrder(json)
